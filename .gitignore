@@ -1,4 +1,5 @@
 **/.vscode
+**/build
 
 # fetch-demo
 1-fetch-demo/node_modules
