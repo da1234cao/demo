@@ -65,19 +65,79 @@ hello world
 
 **在Lua语言中，我们只能为表设置元表；如果要为其他类型的值设置元表，则必须通过C代码或调试库完成**。（为userdate设置元表，是我想整理的内容。所以整理了这篇作为铺垫。）
 
-* 运算相关的元方法：每种算术运算符都有一个对应的元方法。除了加法和乘法外，还有减法（__sub）、除法（__div）、floor除法（__idiv）、负数（__unm）、取模（__mod）和幂运算（__pow）。类似地，位操作也有元方法 ：按位与（ __band ）、按位或（ __bor  、按位异或
-（__bxor）、按位取反（__bnot）、向左移位（__shl）和向右移位（__shr）。我们还可以使用字段__concat来定义连接运算符的行为。
+* 运算相关的元方法：每种算术运算符都有一个对应的元方法。除了加法和乘法外，还有减法（`__sub`）、除法（`__div`）、floor除法（`__idiv`）、负数（`__unm`）、取模（`__mod`）和幂运算（`__pow`）。类似地，位操作也有元方法 ：按位与（ __band ）、按位或（ `__bor`  、按位异或（`__bxor`）、按位取反（`__bnot`）、向左移位（`__shl`）和向右移位（`__shr`）。我们还可以使用字段`__concat`来定义连接运算符的行为。
 
-* 关系运算符相关的元方法：元表还允许我们指定关系运算符的含义，其中的元方法包括等于（__eq）、小于（__lt）和小于等于（__le）。其他三个关系运算符没有单独的元方法，Lua语言会将a～=b转换为not（a==b），a>b转换为b<a，a>=b转换为b<=a。
+* 关系运算符相关的元方法：元表还允许我们指定关系运算符的含义，其中的元方法包括等于（`__eq`）、小于（`__lt`）和小于等于（`__le`）。其他三个关系运算符没有单独的元方法，Lua语言会将a～=b转换为not（`a==b`），`a>b`转换为`b<a`，`a>=b`转换为`b<=a`。
 
-* 库定义相关的元方法：函数print总是调用tostring来进行格式化输出。不过，当对值进行格式化时，函数tostring会首先检查值是否有一个元方法__tostring。
+* 库定义相关的元方法：函数print总是调用tostring来进行格式化输出。不过，当对值进行格式化时，函数tostring会首先检查值是否有一个元方法`__tostring`。
 
 * **表相关的元方法**
-  * `__index` 元方法： 当你通过键来访问 table 的时候，如果这个键没有值，那么Lua就会寻找该table的metatable（假定有metatable）中的__index 键。如果__index包含一个表格，Lua会在表格中查找相应的键。
-  * 元方法__newindex与__index类似，不同之处在于前者用于表的更
-新而后者用于表的查询。当对一个表中不存在的索引赋值时，解释器
-就会查找__newindex元方法：如果这个元方法存在，那么解释器就调
-用它而不执行赋值。
+  * `__index` 元方法： 当你通过键来访问 table 的时候，如果这个键没有值，那么Lua就会寻找该table的metatable（假定有metatable）中的__index 键。如果`__index`包含一个表格，Lua会在表格中查找相应的键。
+  * 元方法`__newindex`与`__index`类似，不同之处在于前者用于表的更新而后者用于表的查询。当对一个表中不存在的索引赋值时，解释器就会查找`__newindex`元方法：如果这个元方法存在，那么解释器就调用它而不执行赋值。
+
+下面是一个使用元表进行复数运算的demo。
+
+```lua
+
+local complex_metatb = {}
+complex_metatb.__index = complex_metatb
+
+complex_metatb.__add = function(compx1, compx2)
+  local res = {real=0, imag=0}
+  res.real = compx1.real + compx2.real
+  res.imag = compx1.imag + compx2.imag
+  print(res)
+  return res
+end
+
+complex_metatb.__tostring = function(complx)
+  local str
+  if(complx.imag > 0) then
+    str = string.format("%f + %f", complx.real, complx.imag)
+  elseif(complx.imag == 0) then
+    str = string.format("%f", complx.real)
+  else
+    str = string.format("%f %f", complx.real, complx.imag)
+  end
+  return str
+end
+
+function complex_metatb.print(complx)
+  local str
+  if(complx.imag > 0) then
+    str = string.format("%f + %f", complx.real, complx.imag)
+  elseif(complx.imag == 0) then
+    str = string.format("%f", complx.real)
+  else
+    str = string.format("%f %f", complx.real, complx.imag)
+  end
+  print(str)
+end
+
+local num_a = {real=1, imag=2}
+local num_b = {real=3, imag=4}
+setmetatable(num_a, complex_metatb)
+setmetatable(num_b, complex_metatb)
+
+local res = num_a + num_b
+print(res)
+setmetatable(res, complex_metatb)
+-- print(res)
+res:print() -- res.print(res)  
+```
+
+程序输出如下。
+
+```lua
+table: 000001D767D66630
+table: 000001D767D66630
+4.000000 + 6.000000
+```
+
+有点类似于运算符重载。其中值得一提的是`local res = num_a + num_b`。
+* 非必要，不使用全局变量。所以，上面代码的函数内部都使用了局部变量。当退出函数的时候，局部变量生命周期结束。
+* 表是一种动态分配的对象，程序只能操作指向表的引用。Lua语言不会进行隐藏的拷贝（hidden copies）或创建新的表。
+* 所以，函数外的res和`__add`内的res指向相同的内存。
 
 
 

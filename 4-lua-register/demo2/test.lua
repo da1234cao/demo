@@ -1,5 +1,11 @@
-local reg = require "register"
+local complex = require "complex"
 
--- local key = require.open_reg_key("HKEY_CURRENT_USER\\Environment"
-local key = reg.open_reg_key [[HKEY_CURRENT_USER\Environment]]
-print(key.get_value(key,"PATH"))
+local num_a = complex.new(1,2)
+local num_b = complex.new(3,4)
+local num_c = num_a:add(num_b)
+num_c:print()
+
+print() -- 换行
+
+local num_d = num_b:sub(num_a)
+num_d:print()
