@@ -1,0 +1,12 @@
+root = true
+
+# 使用空格缩进,缩进为2个字符
+[*.{c,cpp,h,hpp}]
+indent_style = space
+indent_size = 2
+table_width = 2
+
+# makefile的缩进保持为tab
+[Makefile]
+indent_style = tab
+table_width = 4
