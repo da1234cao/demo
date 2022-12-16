@@ -1,5 +1,7 @@
 **/.vscode
 **/build
+**/.vs
+**/x64
 
 # fetch-demo
 1-fetch-demo/node_modules
