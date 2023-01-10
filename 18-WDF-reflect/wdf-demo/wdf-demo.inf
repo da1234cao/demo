@@ -1,0 +1,87 @@
+;
+; wdf-demo.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=wdf-demo.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+PnpLockDown=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+wdf-demo_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+wdf-demo.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%wdf-demo.DeviceDesc%=wdf-demo_Device, Root\wdf-demo ; TODO: edit hw-id
+
+[wdf-demo_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+wdf-demo.sys
+
+;-------------- Service installation
+[wdf-demo_Device.NT.Services]
+AddService = wdf-demo,%SPSVCINST_ASSOCSERVICE%, wdf-demo_Service_Inst
+
+; -------------- wdf-demo driver install sections
+[wdf-demo_Service_Inst]
+DisplayName    = %wdf-demo.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\wdf-demo.sys
+
+;
+;--- wdf-demo_Device Coinstaller installation ------
+;
+
+[wdf-demo_Device.NT.CoInstallers]
+AddReg=wdf-demo_Device_CoInstaller_AddReg
+CopyFiles=wdf-demo_Device_CoInstaller_CopyFiles
+
+[wdf-demo_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[wdf-demo_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[wdf-demo_Device.NT.Wdf]
+KmdfService =  wdf-demo, wdf-demo_wdfsect
+[wdf-demo_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "wdf-demo Installation Disk"
+wdf-demo.DeviceDesc = "wdf-demo Device"
+wdf-demo.SVCDESC = "wdf-demo Service"
