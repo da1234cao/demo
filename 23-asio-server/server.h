@@ -6,6 +6,7 @@ class server {
 public:
   server(const std::string& address, const std::string& port);
   void run();
+  void stop();
 private:
   void do_accept();
 private:

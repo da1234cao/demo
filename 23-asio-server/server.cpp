@@ -2,6 +2,7 @@
 #include <iostream>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/bind/bind.hpp>
+#include <fstream>
 
 server::server(const std::string& address, const std::string& port)
   : m_io_context(1), 
@@ -9,15 +10,16 @@ server::server(const std::string& address, const std::string& port)
     m_connection_manager(),
     m_signals(m_io_context)
 {
+  // 在win下，使用taskkill发送信号，会让进程直接退出，并没有执行这里的信号处理。
+  // 目前不清楚，可参考：https://stackoverflow.com/questions/26404907/gracefully-terminate-a-boost-asio-based-windows-console-application
   m_signals.add(SIGINT);
   m_signals.add(SIGTERM);
   m_signals.async_wait(
-      [this](boost::system::error_code /*ec*/, int /*signo*/)
+      [this](boost::system::error_code ec, int signo)
       {
-        // 服务器停止是通过取消所有未完成的异步操作来实现的。
-        // 一旦所有操作都完成，io_context::run() 函数将退出。
-        m_acceptor.close();
-        m_connection_manager.stop_all();
+        if(signo == SIGINT || signo == SIGTERM) {
+          stop();
+        }
       });
 
   boost::asio::ip::tcp::resolver resolver(m_io_context);
@@ -54,4 +56,12 @@ void server::do_accept()
 void server::run()
 {
   m_io_context.run();
+}
+
+void server::stop()
+{
+  // 服务器停止是通过取消所有未完成的异步操作来实现的。
+  // 一旦所有操作都完成，io_context::run() 函数将退出。
+  m_acceptor.close();
+  m_connection_manager.stop_all();
 }

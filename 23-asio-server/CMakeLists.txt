@@ -2,7 +2,13 @@ cmake_minimum_required(VERSION 3.11)
 
 project(server)
 
-find_package(Boost REQUIRED thread)
+# linux下Boost.Asio依赖于Boost.Thread库，这是一个必需的依赖项
+# 而在Windows上，Boost.Asio可能能够使用内置的Windows线程API而不是Boost.Thread
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  find_package(Boost REQUIRED thread)
+else()
+  find_package(Boost REQUIRED)
+endif()
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
