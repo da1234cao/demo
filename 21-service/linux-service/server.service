@@ -1,0 +1,8 @@
+[Unit]
+Description=A server daemon for testing
+[Service]
+ExecStart=/usr/local/bin/server
+ExecStop=/bin/kill -TERM $MAINPID
+Type=simple
+[Install]
+WantedBy=multi-user.target
